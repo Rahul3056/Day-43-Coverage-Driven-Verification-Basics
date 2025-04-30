@@ -1,0 +1,98 @@
+
+### **Example: Functional Coverage for an ALU Operation**
+
+We’ll model a simplified Arithmetic Logic Unit (ALU) with:
+- Two operands (`op_a`, `op_b`)
+- An operation code (`opcode`)  
+We'll collect functional coverage to verify that:
+- All `opcode` values are exercised
+- Operand `op_a` values hit key ranges
+- All combinations of `opcode` and `op_a` are covered
+
+---
+
+#### **Step 1: Define the ALU Transaction Class**
+
+```systemverilog
+class ALU_Transaction;
+
+    rand bit [3:0] op_a;
+    rand bit [3:0] op_b;
+    rand bit [1:0] opcode; // 2-bit operation code: 00=ADD, 01=SUB, 10=MUL, 11=AND
+
+    // Covergroup definition
+    covergroup alu_cg;
+        coverpoint opcode {
+            bins op_add = {0};
+            bins op_sub = {1};
+            bins op_mul = {2};
+            bins op_and = {3};
+        }
+
+        coverpoint op_a {
+            bins low    = {[0:3]};
+            bins mid    = {[4:7]};
+            bins high   = {[8:15]};
+        }
+
+        cross opcode, op_a; // Cross coverage
+    endgroup
+
+    // Constructor
+    function new();
+        alu_cg = new();
+    endfunction
+
+    // Sampling function
+    function void sample();
+        alu_cg.sample();
+    endfunction
+
+endclass
+```
+
+---
+
+#### **Step 2: Testbench to Randomize and Sample**
+
+```systemverilog
+module tb;
+
+    ALU_Transaction trans;
+
+    initial begin
+        trans = new();
+
+        repeat (20) begin
+            assert (trans.randomize());     // Constrained-random values
+            $display("op_a = %0d, op_b = %0d, opcode = %0d", trans.op_a, trans.op_b, trans.opcode);
+            trans.sample();                // Collect coverage
+        end
+
+        $display("Simulation complete. Check coverage report.");
+    end
+
+endmodule
+```
+
+---
+
+### **What This Example Covers:**
+
+| Item                  | Description                            |
+|------------------------|----------------------------------------|
+| `opcode` coverpoint   | Ensures all 4 operations are triggered  |
+| `op_a` coverpoint     | Covers low, mid, and high operand ranges |
+| `opcode × op_a` cross | Verifies that each operation is tested with various operand types |
+
+---
+
+### **How to View Coverage**
+
+After simulation, use your simulator (like **VCS**, **Questa**, or **Xcelium**) to:
+- Generate a **functional coverage report**.
+- View **bins hit/missed**.
+- See **cross coverage matrix**.
+
+---
+
